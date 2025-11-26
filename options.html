@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Gemini Downloader 设置</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #1a1a2e;
+      color: #eee;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #16213e;
+      color: #fff;
+      font-size: 14px;
+    }
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .hint {
+      font-size: 12px;
+      color: #888;
+      margin-top: 6px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 24px;
+      background: #667eea;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #5a67d8;
+    }
+    .status {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      display: none;
+    }
+    .status.success {
+      display: block;
+      background: #1d4b3e;
+      color: #6ee7b7;
+    }
+    .status.error {
+      display: block;
+      background: #4b1d1d;
+      color: #fca5a5;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 Gemini Downloader 设置</h1>
+  
+  <div>
+    <label for="serverUrl">导出服务器地址</label>
+    <input type="text" id="serverUrl" placeholder="http://localhost:3000/api/upload">
+    <p class="hint">留空则禁用"导出到服务器"功能</p>
+  </div>
+  
+  <div style="margin-top: 20px;">
+    <label for="serverToken">服务器口令</label>
+    <input type="password" id="serverToken" placeholder="输入口令用于服务器验证">
+    <p class="hint">会作为 Authorization 头发送，格式: Bearer {口令}</p>
+  </div>
+  
+  <button id="save">保存设置</button>
+  <div id="status" class="status"></div>
+
+  <div style="margin-top: 30px; padding: 16px; background: #16213e; border-radius: 8px; border: 1px solid #333;">
+    <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #888;">服务器接口说明</h3>
+    <pre style="margin: 0; font-size: 12px; color: #a0aec0; white-space: pre-wrap; line-height: 1.6;"><code>POST /api/upload
+Content-Type: application/json
+Authorization: Bearer {口令}
+
+{
+  "filename": "gemini-view-2025-01-01.html",
+  "title": "页面标题",
+  "html": "&lt;!DOCTYPE html&gt;..."
+}</code></pre>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
+
