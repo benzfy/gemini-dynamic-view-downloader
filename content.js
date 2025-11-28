@@ -4,49 +4,150 @@
 // 进度面板相关函数
 let logsWindowElement = null;
 let hideProgressTimer = null;
+let logMessages = [];
 
 function createLogsWindow() {
   if (logsWindowElement) return logsWindowElement;
   
-  logsWindowElement = document.createElement('singlefile-logs-window');
+  logMessages = []; // 重置日志
+  
+  logsWindowElement = document.createElement('gemini-downloader-logs');
   logsWindowElement.style.cssText = 'all: initial !important;';
   
   const shadowRoot = logsWindowElement.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
   style.textContent = `
-    .logs {
+    .panel {
       position: fixed;
-      bottom: 24px;
-      left: 8px;
+      bottom: 16px;
+      left: 16px;
       z-index: 2147483647;
-      opacity: 0.95;
-      padding: 8px 12px;
-      background-color: white;
-      border-radius: 6px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 13px;
-      min-width: 200px;
-      max-width: 400px;
-      transition: opacity 0.3s ease;
+      width: 260px;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 10px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.08);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.8);
+      overflow: hidden;
+      transition: opacity 0.3s ease, transform 0.3s ease;
     }
-    .logs.info { border-left: 4px solid #1565c0; }
-    .logs.success { border-left: 4px solid #2e7d32; }
-    .logs.warn { border-left: 4px solid #e65100; }
-    .logs.error { border-left: 4px solid #c62828; }
-    .logs-text {
-      color: #333;
-      word-wrap: break-word;
+    .header {
+      background: rgba(255,255,255,0.05);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .icon {
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+    .title {
+      font-weight: 500;
+      font-size: 11px;
+      color: rgba(255,255,255,0.9);
+      flex: 1;
+    }
+    .spinner {
+      width: 12px;
+      height: 12px;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-top-color: #e94560;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    .spinner.done {
+      border-color: #4ade80;
+      border-top-color: #4ade80;
+      animation: none;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .logs {
+      padding: 8px 12px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+    .logs::-webkit-scrollbar {
+      width: 3px;
+    }
+    .logs::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.03);
+    }
+    .logs::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+    }
+    .log-item {
+      padding: 4px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .log-item:last-child {
+      border-bottom: none;
+    }
+    .log-icon {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      border-radius: 50%;
+    }
+    .log-icon.info { background: rgba(59, 130, 246, 0.8); }
+    .log-icon.success { background: rgba(34, 197, 94, 0.8); }
+    .log-icon.current { background: rgba(245, 158, 11, 0.9); }
+    .log-text {
+      flex: 1;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+    .log-item.current .log-text {
+      color: rgba(255,255,255,0.95);
+      font-weight: 500;
+    }
+    .progress-bar {
+      height: 2px;
+      background: rgba(255,255,255,0.08);
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(233, 69, 96, 0.8) 0%, rgba(255, 107, 107, 0.8) 100%);
+      transition: width 0.3s ease;
+      width: 0%;
     }
   `;
   shadowRoot.appendChild(style);
   
-  const logsContent = document.createElement('div');
-  logsContent.className = 'logs info';
-  const textElement = document.createElement('div');
-  textElement.className = 'logs-text';
-  logsContent.appendChild(textElement);
-  shadowRoot.appendChild(logsContent);
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  panel.innerHTML = `
+    <div class="header">
+      <div class="icon">📥</div>
+      <div class="title">保存页面</div>
+      <div class="spinner"></div>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+    </div>
+    <div class="logs"></div>
+  `;
+  shadowRoot.appendChild(panel);
   
   document.documentElement.appendChild(logsWindowElement);
   return logsWindowElement;
@@ -55,8 +156,9 @@ function createLogsWindow() {
 function showProgress(message, type = 'info') {
   const element = createLogsWindow();
   const shadowRoot = element.shadowRoot;
-  const logsContent = shadowRoot.querySelector('.logs');
-  const textElement = shadowRoot.querySelector('.logs-text');
+  const logsContainer = shadowRoot.querySelector('.logs');
+  const progressFill = shadowRoot.querySelector('.progress-fill');
+  const spinner = shadowRoot.querySelector('.spinner');
   
   // 清除之前的隐藏定时器
   if (hideProgressTimer) {
@@ -64,10 +166,48 @@ function showProgress(message, type = 'info') {
     hideProgressTimer = null;
   }
   
-  logsContent.className = `logs ${type}`;
-  textElement.textContent = message;
-  logsContent.style.opacity = '1';
-  logsContent.style.display = 'block';
+  // 解析步骤进度
+  const stepMatch = message.match(/步骤 (\d+)\/(\d+)/);
+  if (stepMatch) {
+    const current = parseInt(stepMatch[1]);
+    const total = parseInt(stepMatch[2]);
+    const percent = (current / total) * 100;
+    progressFill.style.width = `${percent}%`;
+  }
+  
+  // 更新之前的日志项状态
+  const existingItems = logsContainer.querySelectorAll('.log-item');
+  existingItems.forEach(item => {
+    item.classList.remove('current');
+    const icon = item.querySelector('.log-icon');
+    if (icon.classList.contains('current')) {
+      icon.classList.remove('current');
+      icon.classList.add('success');
+      icon.textContent = '✓';
+    }
+  });
+  
+  // 添加新日志
+  const logItem = document.createElement('div');
+  logItem.className = 'log-item current';
+  
+  const iconClass = type === 'success' ? 'success' : 'current';
+  const iconText = type === 'success' ? '✓' : '●';
+  
+  logItem.innerHTML = `
+    <div class="log-icon ${iconClass}">${iconText}</div>
+    <div class="log-text">${message}</div>
+  `;
+  logsContainer.appendChild(logItem);
+  
+  // 滚动到底部
+  logsContainer.scrollTop = logsContainer.scrollHeight;
+  
+  // 如果是成功状态，停止spinner
+  if (type === 'success' && message.includes('步骤 4/4')) {
+    spinner.classList.add('done');
+    progressFill.style.width = '100%';
+  }
 }
 
 function hideProgress(delay = 0) {
@@ -76,13 +216,15 @@ function hideProgress(delay = 0) {
   }
   hideProgressTimer = setTimeout(() => {
     if (logsWindowElement) {
-      const logsContent = logsWindowElement.shadowRoot.querySelector('.logs');
-      if (logsContent) {
-        logsContent.style.opacity = '0';
+      const panel = logsWindowElement.shadowRoot.querySelector('.panel');
+      if (panel) {
+        panel.style.opacity = '0';
+        panel.style.transform = 'translateY(20px)';
         setTimeout(() => {
           if (logsWindowElement) {
             logsWindowElement.remove();
             logsWindowElement = null;
+            logMessages = [];
           }
         }, 300);
       }
@@ -119,7 +261,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "generateHtml") {
     // 生成最终 HTML
-    handleGenerateHtml(request.resourceMap, request.cssMap, request.jsMap, request.genPromptToUrlMap || {})
+    handleGenerateHtml(request.resourceMap, request.cssMap, request.jsMap, request.genPromptToUrlMap || {}, request.blobToBase64Map || {})
       .then((result) => sendResponse(result))
       .catch((error) => sendResponse({ error: error.message }));
     return true;
@@ -136,6 +278,8 @@ async function handleCollectAndDownload(isLocalFile) {
     // 收集 Gemini 动态图片映射（/gen?prompt=... -> 实际图片 URL）
     // 注意：Content Script 运行在隔离世界，无法直接访问页面变量
     // 需要从脚本的文本内容中解析 IMG_GEN_REPLACE_MAP
+    showProgress('步骤 1/4: 收集页面资源...', 'info');
+    
     const genPromptToUrlMap = {};
     const injectedScripts = document.querySelectorAll('script[class^="injected-"]');
     for (const script of injectedScripts) {
@@ -152,35 +296,25 @@ async function handleCollectAndDownload(isLocalFile) {
               imageUrls.add(url);
             }
           }
-          showProgress(`发现 ${Object.keys(map).length} 个 Gemini 动态图片`, 'info');
         } catch (e) {
-          showProgress('解析 IMG_GEN_REPLACE_MAP 失败', 'warn');
+          // 忽略解析失败
         }
       }
     }
 
     // 收集 blob URL 图片并转换为 base64（blob URL 是临时的，保存后会失效）
-    showProgress('处理 Blob 图片...', 'info');
     const blobToBase64Map = {};
     const blobImages = document.querySelectorAll("img[src^='blob:']");
-    let blobCount = 0;
     for (const img of blobImages) {
       const blobUrl = img.src;
       try {
-        // 确保图片已加载
-        if (img.complete && img.naturalWidth > 0) {
-          const base64 = await convertImageToBase64(img);
-          if (base64) {
-            blobToBase64Map[blobUrl] = base64;
-            blobCount++;
-          }
+        const base64 = await convertImageToBase64(img);
+        if (base64) {
+          blobToBase64Map[blobUrl] = base64;
         }
       } catch (e) {
-        showProgress(`Blob 转换失败: ${blobUrl.substring(0, 30)}...`, 'warn');
+        // 忽略转换失败
       }
-    }
-    if (blobCount > 0) {
-      showProgress(`已转换 ${blobCount} 个 Blob 图片`, 'success');
     }
 
     // 收集图片（排除 blob: 和 data:）
@@ -261,8 +395,6 @@ async function handleCollectAndDownload(isLocalFile) {
       }
     }
 
-    showProgress(`收集完成: ${imageUrls.size} 图片, ${cssUrls.size} CSS, ${jsUrls.size} JS`, 'success');
-
     return {
       imageUrls: [...imageUrls],
       cssUrls: [...cssUrls],
@@ -274,7 +406,6 @@ async function handleCollectAndDownload(isLocalFile) {
       error: null,
     };
   } catch (err) {
-    showProgress(`收集失败: ${err.message}`, 'error');
     return {
       imageUrls: [],
       cssUrls: [],
@@ -290,21 +421,36 @@ async function handleCollectAndDownload(isLocalFile) {
 
 // 将图片元素转换为 base64（用于 blob URL 图片）
 async function convertImageToBase64(img) {
-  return new Promise((resolve) => {
+  const src = img.currentSrc || img.src;
+  if (!src) return null;
+
+  // 尝试使用 Canvas（已加载且非跨域的图片）
+  if (img.complete && img.naturalWidth > 0) {
     try {
       const canvas = document.createElement("canvas");
       canvas.width = img.naturalWidth || img.width;
       canvas.height = img.naturalHeight || img.height;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0);
-      // 尝试用 PNG 格式（无损）
       const dataUrl = canvas.toDataURL("image/png");
-      resolve(dataUrl);
+      if (dataUrl) return dataUrl;
     } catch (e) {
       console.warn("Canvas 转换失败（可能是跨域图片）:", e);
-      resolve(null);
     }
-  });
+  }
+
+  // Canvas 失败时，直接 fetch Blob URL 再转成 base64
+  try {
+    const response = await fetch(src, { cache: "force-cache" });
+    if (response.ok) {
+      const blob = await response.blob();
+      return await blobToBase64(blob);
+    }
+  } catch (e) {
+    console.warn("Fetch Blob 转换失败:", e);
+  }
+
+  return null;
 }
 
 // 使用 Content Script 特权下载资源
@@ -312,10 +458,9 @@ async function handleFetchResources(urls, type) {
   const results = {};
   const total = urls.length;
   let completed = 0;
-  let failed = 0;
   
   const typeLabel = type === 'base64' ? '图片' : type === 'css' ? 'CSS' : 'JS';
-  showProgress(`开始下载 ${total} 个${typeLabel}...`, 'info');
+  showProgress(`步骤 2/4: 下载${typeLabel} (0/${total})...`, 'info');
 
   await Promise.all(
     urls.map(async (url) => {
@@ -324,15 +469,11 @@ async function handleFetchResources(urls, type) {
           const data = await fetchAsBase64(url);
           if (data) {
             results[url] = data;
-          } else {
-            failed++;
           }
         } else if (type === "text") {
           const data = await fetchAsText(url);
           if (data) {
             results[url] = data;
-          } else {
-            failed++;
           }
         } else if (type === "css") {
           // CSS 需要处理其中的 url() 引用
@@ -340,27 +481,18 @@ async function handleFetchResources(urls, type) {
           if (cssText) {
             const processedCss = await processCssUrls(cssText, url);
             results[url] = processedCss;
-          } else {
-            failed++;
           }
         }
-        completed++;
-        // 每下载 5 个更新一次进度
-        if (completed % 5 === 0 || completed === total) {
-          showProgress(`${typeLabel}下载中: ${completed}/${total}`, 'info');
-        }
       } catch (err) {
-        completed++;
-        failed++;
+        // 忽略下载失败
+      }
+      completed++;
+      // 每下载 10 个更新一次进度
+      if (completed % 10 === 0 || completed === total) {
+        showProgress(`步骤 2/4: 下载${typeLabel} (${completed}/${total})...`, 'info');
       }
     })
   );
-
-  if (failed > 0) {
-    showProgress(`${typeLabel}下载完成: ${total - failed}/${total} (${failed} 失败)`, 'warn');
-  } else {
-    showProgress(`${typeLabel}下载完成: ${total} 个`, 'success');
-  }
 
   return results;
 }
@@ -494,7 +626,7 @@ async function processCssUrls(cssContent, cssBaseUrl) {
 // 生成最终 HTML
 async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap = {}, blobToBase64Map = {}) {
   try {
-    showProgress('生成离线 HTML...', 'info');
+    showProgress('步骤 3/4: 处理页面内容...', 'info');
     const docClone = document.cloneNode(true);
 
     // 移除进度面板（不要保存到文件中）
@@ -672,12 +804,11 @@ async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap 
     const html = doctype + docClone.documentElement.outerHTML;
 
     const sizeKB = Math.round(html.length / 1024);
-    showProgress(`✅ 生成完成！文件大小: ${sizeKB} KB`, 'success');
-    hideProgress(3000);
+    showProgress(`步骤 4/4: 保存文件 (${sizeKB} KB)...`, 'success');
+    hideProgress(2000);
 
     return { html, title: document.title || "Untitled", error: null };
   } catch (err) {
-    showProgress(`生成失败: ${err.message}`, 'error');
     return { html: null, title: null, error: err.message };
   }
 }
