@@ -1,6 +1,95 @@
 // Content Script - 运行在扩展上下文，有更高的权限
 // 可以 fetch 本地文件（file:// 协议）
 
+// 进度面板相关函数
+let logsWindowElement = null;
+let hideProgressTimer = null;
+
+function createLogsWindow() {
+  if (logsWindowElement) return logsWindowElement;
+  
+  logsWindowElement = document.createElement('singlefile-logs-window');
+  logsWindowElement.style.cssText = 'all: initial !important;';
+  
+  const shadowRoot = logsWindowElement.attachShadow({ mode: 'open' });
+  const style = document.createElement('style');
+  style.textContent = `
+    .logs {
+      position: fixed;
+      bottom: 24px;
+      left: 8px;
+      z-index: 2147483647;
+      opacity: 0.95;
+      padding: 8px 12px;
+      background-color: white;
+      border-radius: 6px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      min-width: 200px;
+      max-width: 400px;
+      transition: opacity 0.3s ease;
+    }
+    .logs.info { border-left: 4px solid #1565c0; }
+    .logs.success { border-left: 4px solid #2e7d32; }
+    .logs.warn { border-left: 4px solid #e65100; }
+    .logs.error { border-left: 4px solid #c62828; }
+    .logs-text {
+      color: #333;
+      word-wrap: break-word;
+    }
+  `;
+  shadowRoot.appendChild(style);
+  
+  const logsContent = document.createElement('div');
+  logsContent.className = 'logs info';
+  const textElement = document.createElement('div');
+  textElement.className = 'logs-text';
+  logsContent.appendChild(textElement);
+  shadowRoot.appendChild(logsContent);
+  
+  document.documentElement.appendChild(logsWindowElement);
+  return logsWindowElement;
+}
+
+function showProgress(message, type = 'info') {
+  const element = createLogsWindow();
+  const shadowRoot = element.shadowRoot;
+  const logsContent = shadowRoot.querySelector('.logs');
+  const textElement = shadowRoot.querySelector('.logs-text');
+  
+  // 清除之前的隐藏定时器
+  if (hideProgressTimer) {
+    clearTimeout(hideProgressTimer);
+    hideProgressTimer = null;
+  }
+  
+  logsContent.className = `logs ${type}`;
+  textElement.textContent = message;
+  logsContent.style.opacity = '1';
+  logsContent.style.display = 'block';
+}
+
+function hideProgress(delay = 0) {
+  if (hideProgressTimer) {
+    clearTimeout(hideProgressTimer);
+  }
+  hideProgressTimer = setTimeout(() => {
+    if (logsWindowElement) {
+      const logsContent = logsWindowElement.shadowRoot.querySelector('.logs');
+      if (logsContent) {
+        logsContent.style.opacity = '0';
+        setTimeout(() => {
+          if (logsWindowElement) {
+            logsWindowElement.remove();
+            logsWindowElement = null;
+          }
+        }, 300);
+      }
+    }
+  }, delay);
+}
+
 // 监听来自 background 的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "getFrameContent") {
