@@ -7,19 +7,19 @@ const MENU_SAVE_AND_PUBLISH = "save-and-publish";
 
 // 创建右键菜单 - 安装/更新时
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("扩展安装/更新，创建菜单");
+  console.log("Extension installed/updated, creating menus");
   createContextMenus();
 });
 
 // 浏览器启动时
 chrome.runtime.onStartup.addListener(() => {
-  console.log("浏览器启动，创建菜单");
+  console.log("Browser started, creating menus");
   createContextMenus();
 });
 
 // Service Worker 启动时也要创建菜单
-console.log("Service Worker 启动，创建菜单");
-createContextMenus().catch((err) => console.error("创建菜单失败:", err));
+console.log("Service Worker started, creating menus");
+createContextMenus().catch((err) => console.error("Failed to create menus:", err));
 
 // 监听设置更新
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -36,7 +36,7 @@ async function createContextMenus() {
     // 仅下载到本地
     chrome.contextMenus.create({
       id: MENU_SAVE_LOCAL,
-      title: "📥 保存页面为 HTML",
+      title: chrome.i18n.getMessage("menuSaveLocal"),
       contexts: ["page", "frame"],
     });
 
@@ -45,14 +45,14 @@ async function createContextMenus() {
     if (sihubUrl) {
       chrome.contextMenus.create({
         id: MENU_SAVE_AND_PUBLISH,
-        title: "☁️ 保存并发布到云端",
+        title: chrome.i18n.getMessage("menuSaveAndPublish"),
         contexts: ["page", "frame"],
       });
     }
 
-    console.log("菜单创建成功");
+    console.log("Context menus created");
   } catch (err) {
-    console.error("创建菜单出错:", err);
+    console.error("Failed to create menus:", err);
   }
 }
 
@@ -149,7 +149,7 @@ async function savePageAsHtml(info, tab, options = {}) {
     // 下载到本地
     if (downloadLocal) {
       await downloadAsFile(html, filename);
-      console.log("已保存到本地:", filename);
+      console.log("Saved to local:", filename);
     }
 
     // 发布到云端
@@ -162,33 +162,31 @@ async function savePageAsHtml(info, tab, options = {}) {
   }
 }
 
-// 发送消息到指定 frame（如果 Content Script 不存在，先注入）
+// 发送消息到指定 frame（先注入 Content Script）
 async function sendMessageToFrame(tabId, frameId, message) {
+  // 先尝试注入 content script
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tabId, frameIds: [frameId] },
+      files: ["content.js"],
+    });
+    console.log("Content script injected successfully");
+  } catch (injectErr) {
+    // 可能已经注入过，或者页面不支持
+    console.log("Content script injection:", injectErr.message);
+  }
+
+  // 等待一小段时间确保脚本加载完成
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // 发送消息
   try {
     const response = await chrome.tabs.sendMessage(tabId, message, {
       frameId: frameId,
     });
     return response || {};
   } catch (err) {
-    // Content Script 可能不存在，尝试注入
-    if (err.message.includes("Could not establish connection")) {
-      console.log("Content Script 不存在，尝试注入...");
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tabId, frameIds: [frameId] },
-          files: ["content.js"],
-        });
-        // 注入后重试发送消息
-        const response = await chrome.tabs.sendMessage(tabId, message, {
-          frameId: frameId,
-        });
-        return response || {};
-      } catch (injectErr) {
-        console.error("注入 Content Script 失败:", injectErr);
-        return { error: injectErr.message };
-      }
-    }
-    console.error("发送消息失败:", err);
+    console.error("Send message failed:", err);
     return { error: err.message };
   }
 }
@@ -222,14 +220,14 @@ async function uploadToSihub(html, title, filename, tabId, frameId) {
   ]);
 
   if (!sihubUrl) {
-    console.error("未配置 SIHub 端点 URL");
-    await showNotification(tabId, frameId, "error", "未配置 SIHub 端点 URL，请在扩展设置中配置");
+    console.error("Endpoint URL not configured");
+    await showNotification(tabId, frameId, "error", chrome.i18n.getMessage("toastNoEndpoint"));
     return;
   }
 
   if (!sihubApiKey) {
-    console.error("未配置 SIHub API Key");
-    await showNotification(tabId, frameId, "error", "未配置 SIHub API Key，请在扩展设置中配置");
+    console.error("API Key not configured");
+    await showNotification(tabId, frameId, "error", chrome.i18n.getMessage("toastNoApiKey"));
     return;
   }
 
@@ -266,14 +264,14 @@ async function uploadToSihub(html, title, filename, tabId, frameId) {
     }
 
     const result = await response.json().catch(() => ({}));
-    console.log("SIHub 上传成功:", result);
+    console.log("Upload successful:", result);
     
     // 显示成功通知
-    await showNotification(tabId, frameId, "success", "已成功发布到云端 ☁️");
+    await showNotification(tabId, frameId, "success", chrome.i18n.getMessage("toastPublishSuccess"));
 
   } catch (err) {
-    console.error("SIHub 上传失败:", err);
-    await showNotification(tabId, frameId, "error", `发布失败: ${err.message}`);
+    console.error("Upload failed:", err);
+    await showNotification(tabId, frameId, "error", chrome.i18n.getMessage("toastPublishFailed") + err.message);
   }
 }
 

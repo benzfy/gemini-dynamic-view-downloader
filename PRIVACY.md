@@ -1,65 +1,64 @@
-# 隐私权政策 - Gemini Dynamic View Downloader
+# Privacy Policy - Dynamic View Downloader
 
-最后更新日期：2024 年 12 月
+Last updated: December 2024
 
-## 概述
+## Overview
 
-Gemini Dynamic View Downloader（以下简称"本扩展"）尊重并保护用户隐私。本隐私权政策说明本扩展如何收集、使用和保护您的信息。
+Dynamic View Downloader (hereinafter referred to as "this extension") respects and protects user privacy. This privacy policy explains how this extension collects, uses, and protects your information.
 
-## 数据收集
+## Data Collection
 
-### 本扩展收集的数据
+### Data Collected by This Extension
 
-1. **用户配置信息**
-   - 云端服务器端点 URL
+1. **User Configuration**
+   - Cloud server endpoint URL
    - API Key
    
-   这些信息由用户主动输入，存储在 Chrome 浏览器的本地同步存储中，仅用于实现"发布到云端"功能。
+   This information is voluntarily entered by users and stored in Chrome browser's local sync storage, solely used to implement the "Publish to Cloud" feature.
 
-2. **页面内容**
-   - 当用户主动触发"保存页面"功能时，扩展会临时读取当前页面的 HTML 内容和资源（图片、CSS、JS）
-   - 这些数据仅用于生成离线 HTML 文件，不会被存储或传输到扩展开发者的服务器
+2. **Page Content**
+   - When users actively trigger the "Save Page" feature, the extension temporarily reads the current page's HTML content and resources (images, CSS, JS)
+   - This data is only used to generate offline HTML files and is not stored or transmitted to the extension developer's servers
 
-### 本扩展不收集的数据
+### Data NOT Collected by This Extension
 
-- 浏览历史
-- 个人身份信息
-- 登录凭据
-- 任何后台自动收集的数据
+- Browsing history
+- Personal identification information
+- Login credentials
+- Any automatically collected background data
 
-## 数据使用
+## Data Usage
 
-- **本地保存**：生成的 HTML 文件保存到用户本地设备
-- **云端上传**：如果用户配置了云端服务器并选择"发布到云端"，页面内容将上传到**用户自己指定的服务器**，而非扩展开发者的服务器
+- **Local Save**: Generated HTML files are saved to the user's local device
+- **Cloud Upload**: If users configure a cloud server and choose "Publish to Cloud", page content is uploaded to **the user's own specified server**, not the extension developer's server
 
-## 数据共享
+## Data Sharing
 
-本扩展不会与任何第三方共享用户数据。所有数据处理都在用户本地浏览器中完成。
+This extension does not share user data with any third parties. All data processing is completed within the user's local browser.
 
-云端上传功能仅将数据发送到用户自己配置的服务器地址，扩展开发者无法访问这些数据。
+The cloud upload feature only sends data to the server address configured by the user. The extension developer cannot access this data.
 
-## 数据存储
+## Data Storage
 
-用户配置存储在 Chrome 浏览器的 `chrome.storage.sync` 中，会随用户的 Google 账号同步。用户可以随时在扩展设置页面修改或删除这些配置。
+User configuration is stored in Chrome browser's `chrome.storage.sync` and syncs with the user's Google account. Users can modify or delete this configuration at any time in the extension settings page.
 
-## 权限说明
+## Permissions
 
-本扩展请求的浏览器权限仅用于实现核心功能：
-- 读取页面内容以生成离线 HTML
-- 下载文件到本地
-- 存储用户配置
+Browser permissions requested by this extension are only used to implement core functionality:
+- Read page content to generate offline HTML
+- Download files to local storage
+- Store user configuration
 
-## 儿童隐私
+## Children's Privacy
 
-本扩展不针对 13 岁以下儿童，也不会故意收集儿童的个人信息。
+This extension does not target children under 13 years of age and does not intentionally collect personal information from children.
 
-## 政策变更
+## Policy Changes
 
-如本隐私权政策有任何变更，我们将在此页面更新。
+If there are any changes to this privacy policy, we will update this page.
 
-## 联系方式
+## Contact
 
-如对本隐私权政策有任何疑问，请通过以下方式联系：
+If you have any questions about this privacy policy, please contact us through:
 
-- GitHub: [你的 GitHub 仓库地址]
-- Email: [你的邮箱]
+- GitHub: https://github.com/benzfy/gemini-dynamic-view-downloader.git

@@ -1,0 +1,98 @@
+{
+  "extName": {
+    "message": "Dynamic View Downloader"
+  },
+  "extDescription": {
+    "message": "Save Dynamic View as a standalone HTML file"
+  },
+  "menuSaveLocal": {
+    "message": "📥 Save Page as HTML"
+  },
+  "menuSaveAndPublish": {
+    "message": "☁️ Save and Publish to Cloud"
+  },
+  "optionsTitle": {
+    "message": "🔧 Dynamic View Downloader Settings"
+  },
+  "optionsCloudPublish": {
+    "message": "☁️ Cloud Publishing"
+  },
+  "optionsEndpointUrl": {
+    "message": "Endpoint URL"
+  },
+  "optionsEndpointPlaceholder": {
+    "message": "https://sihub.xiaoluxue.com/api/v1/projects/upload"
+  },
+  "optionsEndpointHint": {
+    "message": "Leave empty to disable \"Save and Publish to Cloud\" feature"
+  },
+  "optionsApiKey": {
+    "message": "API Key"
+  },
+  "optionsApiKeyPlaceholder": {
+    "message": "lim_xxxxxx"
+  },
+  "optionsApiKeyHint": {
+    "message": "Sent via X-API-Key header"
+  },
+  "optionsSave": {
+    "message": "Save Settings"
+  },
+  "optionsSaved": {
+    "message": "✓ Settings saved"
+  },
+  "optionsSaveFailed": {
+    "message": "✗ Save failed: "
+  },
+  "optionsApiInfo": {
+    "message": "API Documentation"
+  },
+  "progressTitle": {
+    "message": "Saving Page"
+  },
+  "progressStep1": {
+    "message": "Step 1/4: Collecting resources..."
+  },
+  "progressStep2": {
+    "message": "Step 2/4: Downloading $TYPE$ ($CURRENT$/$TOTAL$)...",
+    "placeholders": {
+      "type": { "content": "$1" },
+      "current": { "content": "$2" },
+      "total": { "content": "$3" }
+    }
+  },
+  "progressStep3": {
+    "message": "Step 3/4: Processing content..."
+  },
+  "progressStep4": {
+    "message": "Step 4/4: Saving file ($SIZE$ KB)...",
+    "placeholders": {
+      "size": { "content": "$1" }
+    }
+  },
+  "resourceImages": {
+    "message": "images"
+  },
+  "resourceCSS": {
+    "message": "CSS"
+  },
+  "resourceJS": {
+    "message": "JS"
+  },
+  "toastPublishSuccess": {
+    "message": "Successfully published to cloud ☁️"
+  },
+  "toastPublishFailed": {
+    "message": "Publish failed: "
+  },
+  "toastNoEndpoint": {
+    "message": "Endpoint URL not configured. Please configure in extension settings."
+  },
+  "toastNoApiKey": {
+    "message": "API Key not configured. Please configure in extension settings."
+  },
+  "savedToLocal": {
+    "message": "Saved to local: "
+  }
+}
+

@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Gemini Dynamic View Downloader",
+  "name": "__MSG_extName__",
   "version": "1.0.0",
-  "description": "一键保存 Gemini 动态视图为 HTML 文件",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
   "permissions": [
     "contextMenus",
     "downloads",
@@ -10,18 +11,24 @@
     "scripting",
     "storage"
   ],
-  "host_permissions": ["<all_urls>", "file:///*"],
-  "background": {
-    "service_worker": "background.js"
-  },
+  "host_permissions": [
+    "https://gemini.google.com/*",
+    "https://*.usercontent.goog/*"
+  ],
   "content_scripts": [
     {
-      "matches": ["<all_urls>", "file:///*"],
+      "matches": [
+        "https://gemini.google.com/*",
+        "https://*.usercontent.goog/*"
+      ],
       "js": ["content.js"],
       "all_frames": true,
       "run_at": "document_idle"
     }
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true

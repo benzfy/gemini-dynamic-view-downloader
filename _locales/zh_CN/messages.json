@@ -1,0 +1,98 @@
+{
+  "extName": {
+    "message": "动态视图下载器"
+  },
+  "extDescription": {
+    "message": "一键保存动态视图为 HTML 文件"
+  },
+  "menuSaveLocal": {
+    "message": "📥 保存页面为 HTML"
+  },
+  "menuSaveAndPublish": {
+    "message": "☁️ 保存并发布到云端"
+  },
+  "optionsTitle": {
+    "message": "🔧 动态视图下载器 设置"
+  },
+  "optionsCloudPublish": {
+    "message": "☁️ 云端发布"
+  },
+  "optionsEndpointUrl": {
+    "message": "端点 URL"
+  },
+  "optionsEndpointPlaceholder": {
+    "message": "https://sihub.xiaoluxue.com/api/v1/projects/upload"
+  },
+  "optionsEndpointHint": {
+    "message": "留空则禁用「保存并发布到云端」功能"
+  },
+  "optionsApiKey": {
+    "message": "API Key"
+  },
+  "optionsApiKeyPlaceholder": {
+    "message": "lim_xxxxxx"
+  },
+  "optionsApiKeyHint": {
+    "message": "通过 X-API-Key 请求头发送"
+  },
+  "optionsSave": {
+    "message": "保存设置"
+  },
+  "optionsSaved": {
+    "message": "✓ 设置已保存"
+  },
+  "optionsSaveFailed": {
+    "message": "✗ 保存失败: "
+  },
+  "optionsApiInfo": {
+    "message": "接口说明"
+  },
+  "progressTitle": {
+    "message": "保存页面"
+  },
+  "progressStep1": {
+    "message": "步骤 1/4: 收集页面资源..."
+  },
+  "progressStep2": {
+    "message": "步骤 2/4: 下载$TYPE$ ($CURRENT$/$TOTAL$)...",
+    "placeholders": {
+      "type": { "content": "$1" },
+      "current": { "content": "$2" },
+      "total": { "content": "$3" }
+    }
+  },
+  "progressStep3": {
+    "message": "步骤 3/4: 处理页面内容..."
+  },
+  "progressStep4": {
+    "message": "步骤 4/4: 保存文件 ($SIZE$ KB)...",
+    "placeholders": {
+      "size": { "content": "$1" }
+    }
+  },
+  "resourceImages": {
+    "message": "图片"
+  },
+  "resourceCSS": {
+    "message": "CSS"
+  },
+  "resourceJS": {
+    "message": "JS"
+  },
+  "toastPublishSuccess": {
+    "message": "已成功发布到云端 ☁️"
+  },
+  "toastPublishFailed": {
+    "message": "发布失败: "
+  },
+  "toastNoEndpoint": {
+    "message": "未配置端点 URL，请在扩展设置中配置"
+  },
+  "toastNoApiKey": {
+    "message": "未配置 API Key，请在扩展设置中配置"
+  },
+  "savedToLocal": {
+    "message": "已保存到本地: "
+  }
+}
+

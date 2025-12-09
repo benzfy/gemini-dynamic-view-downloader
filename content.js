@@ -1,7 +1,12 @@
-// Content Script - 运行在扩展上下文，有更高的权限
-// 可以 fetch 本地文件（file:// 协议）
+// Content Script - runs in extension context with elevated privileges
+// Can fetch local files (file:// protocol)
 
-// 进度面板相关函数
+// Helper function to get i18n message
+function i18n(key, substitutions) {
+  return chrome.i18n.getMessage(key, substitutions) || key;
+}
+
+// Progress panel functions
 let logsWindowElement = null;
 let hideProgressTimer = null;
 let logMessages = [];
@@ -139,7 +144,7 @@ function createLogsWindow() {
   panel.innerHTML = `
     <div class="header">
       <div class="icon">📥</div>
-      <div class="title">保存页面</div>
+      <div class="title">${i18n('progressTitle')}</div>
       <div class="spinner"></div>
     </div>
     <div class="progress-bar">
@@ -166,8 +171,8 @@ function showProgress(message, type = 'info') {
     hideProgressTimer = null;
   }
   
-  // 解析步骤进度
-  const stepMatch = message.match(/步骤 (\d+)\/(\d+)/);
+  // 解析步骤进度 (支持中英文: "Step 1/4" 或 "步骤 1/4")
+  const stepMatch = message.match(/(?:Step|步骤)\s*(\d+)\/(\d+)/i);
   if (stepMatch) {
     const current = parseInt(stepMatch[1]);
     const total = parseInt(stepMatch[2]);
@@ -204,7 +209,7 @@ function showProgress(message, type = 'info') {
   logsContainer.scrollTop = logsContainer.scrollHeight;
   
   // 如果是成功状态，停止spinner
-  if (type === 'success' && message.includes('步骤 4/4')) {
+  if (type === 'success' && (message.includes('Step 4/4') || message.includes('步骤 4/4'))) {
     spinner.classList.add('done');
     progressFill.style.width = '100%';
   }
@@ -380,7 +385,7 @@ async function handleCollectAndDownload(isLocalFile) {
     // 收集 Gemini 动态图片映射（/gen?prompt=... -> 实际图片 URL）
     // 注意：Content Script 运行在隔离世界，无法直接访问页面变量
     // 需要从脚本的文本内容中解析 IMG_GEN_REPLACE_MAP
-    showProgress('步骤 1/4: 收集页面资源...', 'info');
+    showProgress(i18n('progressStep1'), 'info');
     
     const genPromptToUrlMap = {};
     const injectedScripts = document.querySelectorAll('script[class^="injected-"]');
@@ -561,8 +566,8 @@ async function handleFetchResources(urls, type) {
   const total = urls.length;
   let completed = 0;
   
-  const typeLabel = type === 'base64' ? '图片' : type === 'css' ? 'CSS' : 'JS';
-  showProgress(`步骤 2/4: 下载${typeLabel} (0/${total})...`, 'info');
+  const typeLabel = type === 'base64' ? i18n('resourceImages') : type === 'css' ? i18n('resourceCSS') : i18n('resourceJS');
+  showProgress(chrome.i18n.getMessage('progressStep2', [typeLabel, '0', String(total)]), 'info');
 
   await Promise.all(
     urls.map(async (url) => {
@@ -591,7 +596,7 @@ async function handleFetchResources(urls, type) {
       completed++;
       // 每下载 10 个更新一次进度
       if (completed % 10 === 0 || completed === total) {
-        showProgress(`步骤 2/4: 下载${typeLabel} (${completed}/${total})...`, 'info');
+        showProgress(chrome.i18n.getMessage('progressStep2', [typeLabel, String(completed), String(total)]), 'info');
       }
     })
   );
@@ -615,7 +620,7 @@ async function fetchAsBase64(url) {
     }
   } catch (err) {
     // CORS 错误会抛出异常，继续尝试不带 credentials
-    console.log(`带 credentials 失败，尝试不带: ${url}`);
+    console.log(`Credentials failed, retrying without: ${url}`);
   }
 
   // 尝试2：不带 credentials（避免 CORS 的 wildcard 问题）
@@ -651,7 +656,7 @@ async function fetchAsText(url) {
     }
   } catch (err) {
     // CORS 错误会抛出异常，继续尝试不带 credentials
-    console.log(`带 credentials 失败，尝试不带: ${url}`);
+    console.log(`Credentials failed, retrying without: ${url}`);
   }
 
   // 尝试2：不带 credentials
@@ -728,7 +733,7 @@ async function processCssUrls(cssContent, cssBaseUrl) {
 // 生成最终 HTML
 async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap = {}, blobToBase64Map = {}) {
   try {
-    showProgress('步骤 3/4: 处理页面内容...', 'info');
+    showProgress(i18n('progressStep3'), 'info');
     const docClone = document.cloneNode(true);
 
     // 移除进度面板（不要保存到文件中）
@@ -858,7 +863,7 @@ async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap 
     // 因为我们已经把所有图片（包括 blob URL）都处理成 base64 了
     // 不需要 inject 脚本再做替换，反而它会把已处理的图片改回占位符
     const injectedScripts = docClone.querySelectorAll('script[class^="injected-"]');
-    console.log(`[Inject] 找到 ${injectedScripts.length} 个注入脚本，将禁用它们`);
+    console.log(`[Inject] Found ${injectedScripts.length} injected scripts, disabling them`);
     for (const script of injectedScripts) {
       script.setAttribute("type", "text/plain");
       script.setAttribute("data-disabled-by-extension", "true");
@@ -906,7 +911,7 @@ async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap 
     const html = doctype + docClone.documentElement.outerHTML;
 
     const sizeKB = Math.round(html.length / 1024);
-    showProgress(`步骤 4/4: 保存文件 (${sizeKB} KB)...`, 'success');
+    showProgress(chrome.i18n.getMessage('progressStep4', [String(sizeKB)]), 'success');
     hideProgress(2000);
 
     return { html, title: document.title || "Untitled", error: null };

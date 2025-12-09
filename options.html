@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Gemini Downloader 设置</title>
+  <title data-i18n="optionsTitle">Dynamic View Downloader Settings</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -76,35 +76,34 @@
   </style>
 </head>
 <body>
-  <h1>🔧 Gemini Downloader 设置</h1>
+  <h1 data-i18n="optionsTitle">🔧 Dynamic View Downloader Settings</h1>
   
-  <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: #fff;">☁️ 云端发布</h2>
+  <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: #fff;" data-i18n="optionsCloudPublish">☁️ Cloud Publishing</h2>
   
   <div>
-    <label for="sihubUrl">端点 URL</label>
-    <input type="text" id="sihubUrl" placeholder="https://sihub.xiaoluxue.com/api/v1/projects/upload">
-    <p class="hint">留空则禁用"保存并发布到云端"功能</p>
+    <label for="sihubUrl" data-i18n="optionsEndpointUrl">Endpoint URL</label>
+    <input type="text" id="sihubUrl" data-i18n-placeholder="optionsEndpointPlaceholder" placeholder="https://sihub.xiaoluxue.com/api/v1/projects/upload">
+    <p class="hint" data-i18n="optionsEndpointHint">Leave empty to disable "Save and Publish to Cloud" feature</p>
   </div>
   
   <div style="margin-top: 20px;">
-    <label for="sihubApiKey">API Key</label>
-    <input type="password" id="sihubApiKey" placeholder="lim_xxxxxx">
-    <p class="hint">通过 X-API-Key 请求头发送</p>
+    <label for="sihubApiKey" data-i18n="optionsApiKey">API Key</label>
+    <input type="password" id="sihubApiKey" data-i18n-placeholder="optionsApiKeyPlaceholder" placeholder="lim_xxxxxx">
+    <p class="hint" data-i18n="optionsApiKeyHint">Sent via X-API-Key header</p>
   </div>
 
-  <button id="save">保存设置</button>
+  <button id="save" data-i18n="optionsSave">Save Settings</button>
   <div id="status" class="status"></div>
 
   <div style="margin-top: 30px; padding: 16px; background: #16213e; border-radius: 8px; border: 1px solid #333;">
-    <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #888;">接口说明</h3>
-    <pre style="margin: 0; font-size: 12px; color: #a0aec0; white-space: pre-wrap; line-height: 1.6;"><code>POST {端点URL}
+    <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #888;" data-i18n="optionsApiInfo">API Documentation</h3>
+    <pre style="margin: 0; font-size: 12px; color: #a0aec0; white-space: pre-wrap; line-height: 1.6;"><code>POST {Endpoint URL}
 X-API-Key: lim_xxxxxx
 Content-Type: multipart/form-data
 
-file: {页面标题}.zip (内含 index.html)</code></pre>
+file: {page-title}.zip (contains index.html)</code></pre>
   </div>
 
   <script src="options.js"></script>
 </body>
 </html>
-
