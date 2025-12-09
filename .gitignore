@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 打包文件
+*.zip
+*.crx
+*.pem
+
+# 日志
+*.log
+
+# 临时文件
+tmp/
+temp/
+
