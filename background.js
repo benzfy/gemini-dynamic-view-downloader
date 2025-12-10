@@ -28,8 +28,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+// 菜单创建锁，防止并发创建
+let isCreatingMenus = false;
+
 // 创建或更新右键菜单
 async function createContextMenus() {
+  if (isCreatingMenus) return;
+  isCreatingMenus = true;
+  
   try {
     await chrome.contextMenus.removeAll();
 
@@ -53,6 +59,8 @@ async function createContextMenus() {
     console.log("Context menus created");
   } catch (err) {
     console.error("Failed to create menus:", err);
+  } finally {
+    isCreatingMenus = false;
   }
 }
 
@@ -212,7 +220,7 @@ async function downloadAsFile(html, filename) {
   });
 }
 
-// 上传到云端
+// 上传到云端（使用预签名 URL 方式）
 async function uploadToSihub(html, title, filename, tabId, frameId) {
   const { sihubUrl, sihubApiKey } = await chrome.storage.sync.get([
     "sihubUrl",
@@ -232,6 +240,9 @@ async function uploadToSihub(html, title, filename, tabId, frameId) {
   }
 
   try {
+    // 通知开始上传
+    await showUploadProgress(tabId, frameId, "uploading", "Creating ZIP file...");
+
     // 创建 zip 文件
     const zip = new JSZip();
     zip.file("index.html", html);
@@ -243,35 +254,166 @@ async function uploadToSihub(html, title, filename, tabId, frameId) {
       compressionOptions: { level: 6 }
     });
     
-    // 准备 FormData
-    const formData = new FormData();
     const zipFilename = sanitizeFilename(title || "page") + ".zip";
-    formData.append("file", zipBlob, zipFilename);
+    const baseUrl = sihubUrl.replace(/\/+$/, ''); // 移除末尾斜杠
+    const zipSizeMB = (zipBlob.size / 1024 / 1024).toFixed(2);
 
-    // 上传到 SIHub
-    console.log(`开始上传到 SIHub: ${sihubUrl}`);
-    const response = await fetch(sihubUrl, {
+    // Step 1: 获取预签名上传 URL
+    await showUploadProgress(tabId, frameId, "uploading", "Getting upload URL...");
+    const uploadUrlEndpoint = `${baseUrl}/upload-url`;
+    console.log("Step 1: Getting presigned upload URL from:", uploadUrlEndpoint);
+    
+    const uploadUrlResponse = await fetch(uploadUrlEndpoint, {
       method: "POST",
       headers: {
-        "X-API-Key": sihubApiKey,
+        "Authorization": `Bearer ${sihubApiKey}`,
+        "Content-Type": "application/json",
       },
-      body: formData,
+      body: JSON.stringify({ filename: zipFilename }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`SIHub 响应错误: ${response.status} - ${errorText}`);
+    const responseText = await uploadUrlResponse.text();
+    console.log("Response status:", uploadUrlResponse.status);
+    console.log("Response body:", responseText.substring(0, 200));
+
+    if (!uploadUrlResponse.ok) {
+      // 检查是否是 HTML 错误页面
+      if (responseText.startsWith('<!') || responseText.startsWith('<html')) {
+        throw new Error(`API returned HTML (status ${uploadUrlResponse.status}). URL: ${uploadUrlEndpoint}`);
+      }
+      throw new Error(`Failed to get upload URL: ${uploadUrlResponse.status} - ${responseText}`);
     }
 
-    const result = await response.json().catch(() => ({}));
-    console.log("Upload successful:", result);
+    // 检查响应是否是 JSON
+    if (responseText.startsWith('<!') || responseText.startsWith('<html')) {
+      throw new Error(`API returned HTML instead of JSON. Check your API URL: ${uploadUrlEndpoint}`);
+    }
+
+    let uploadUrlData;
+    try {
+      uploadUrlData = JSON.parse(responseText);
+    } catch (e) {
+      if (responseText.includes('<!doctype') || responseText.includes('<html')) {
+        throw new Error(`API URL 可能配置错误，服务器返回了 HTML 页面而不是 JSON。请检查 URL: ${uploadUrlEndpoint}`);
+      }
+      throw new Error(`无效的 JSON 响应: ${responseText.substring(0, 100)}...`);
+    }
+    const { upload_id, presigned_url } = uploadUrlData;
     
-    // 显示成功通知
-    await showNotification(tabId, frameId, "success", chrome.i18n.getMessage("toastPublishSuccess"));
+    if (!upload_id || !presigned_url) {
+      throw new Error(`Invalid response from server: ${JSON.stringify(uploadUrlData)}`);
+    }
+    console.log("Got upload_id:", upload_id);
+
+    // Step 2: 直接上传 ZIP 文件到对象存储
+    await showUploadProgress(tabId, frameId, "uploading", `Uploading ${zipSizeMB} MB...`);
+    console.log("Step 2: Uploading ZIP to object storage...");
+    
+    const uploadResponse = await fetch(presigned_url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/zip",
+      },
+      body: zipBlob,
+    });
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text().catch(() => '');
+      throw new Error(`Failed to upload file: ${uploadResponse.status} ${errorText}`);
+    }
+    console.log("File uploaded successfully");
+
+    // Step 3: 创建项目
+    await showUploadProgress(tabId, frameId, "uploading", "Creating project...");
+    console.log("Step 3: Creating project...");
+    
+    const createProjectResponse = await fetch(baseUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${sihubApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        upload_id: upload_id,
+        title: title || "Untitled",
+        description: `Saved from Dynamic View on ${new Date().toLocaleString()}`,
+      }),
+    });
+
+    if (!createProjectResponse.ok) {
+      const errorText = await createProjectResponse.text();
+      if (errorText.startsWith('<!') || errorText.startsWith('<html')) {
+        throw new Error(`API returned HTML instead of JSON. Check your API URL.`);
+      }
+      throw new Error(`Failed to create project: ${createProjectResponse.status} - ${errorText}`);
+    }
+
+    const result = await createProjectResponse.json();
+    console.log("Project created:", result);
+    
+    const projectId = result.id;
+    
+    // Step 4: 轮询查询项目状态
+    await showUploadProgress(tabId, frameId, "processing", "Processing...");
+    console.log("Step 4: Polling project status...");
+    
+    const maxAttempts = 40; // 最多等待 120 秒 (40 * 3s)
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 3000)); // 每 3 秒查询一次
+      attempts++;
+      
+      const statusResponse = await fetch(`${baseUrl}/${projectId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${sihubApiKey}`,
+        },
+      });
+      
+      if (!statusResponse.ok) {
+        console.warn("Failed to get project status:", statusResponse.status);
+        continue;
+      }
+      
+      const projectData = await statusResponse.json();
+      console.log(`Project status (${attempts}s):`, projectData.status);
+      
+      if (projectData.status === "ready") {
+        // 处理完成 - 从 API URL 提取域名 + 固定路径 /project
+        const apiUrlObj = new URL(baseUrl);
+        const projectUrl = `${apiUrlObj.origin}/project/${projectId}`;
+        await showUploadProgress(tabId, frameId, "success", "Published!", projectUrl);
+        console.log("Project ready! URL:", projectUrl);
+        return;
+      } else if (projectData.status === "failed") {
+        throw new Error(`Project processing failed: ${projectData.error_msg || 'Unknown error'}`);
+      }
+      
+      // 更新进度显示（实际经过的秒数 = 查询次数 * 3）
+      await showUploadProgress(tabId, frameId, "processing", `Processing... (${attempts * 3}s)`);
+    }
+    
+    // 超时但没有失败，显示部分成功
+    await showUploadProgress(tabId, frameId, "success", "Uploaded! Still processing...");
 
   } catch (err) {
     console.error("Upload failed:", err);
-    await showNotification(tabId, frameId, "error", chrome.i18n.getMessage("toastPublishFailed") + err.message);
+    await showUploadProgress(tabId, frameId, "error", err.message);
+  }
+}
+
+// 显示上传进度（通过 content script）
+async function showUploadProgress(tabId, frameId, status, message, url = '') {
+  try {
+    await chrome.tabs.sendMessage(tabId, {
+      action: "showUploadProgress",
+      status,
+      message,
+      url,
+    }, { frameId });
+  } catch (err) {
+    console.error("Failed to show upload progress:", err);
   }
 }
 

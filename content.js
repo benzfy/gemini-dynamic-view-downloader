@@ -278,7 +278,103 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true });
     return true;
   }
+
+  if (request.action === "showUploadProgress") {
+    // 显示上传进度（使用同一个进度面板）
+    showUploadInMainPanel(request.status, request.message, request.url);
+    sendResponse({ success: true });
+    return true;
+  }
 });
+
+// 在主进度面板中显示上传进度
+function showUploadInMainPanel(status, message, url = '') {
+  const element = createLogsWindow();
+  const shadowRoot = element.shadowRoot;
+  const logsContainer = shadowRoot.querySelector('.logs');
+  const progressFill = shadowRoot.querySelector('.progress-fill');
+  const spinner = shadowRoot.querySelector('.spinner');
+  const titleEl = shadowRoot.querySelector('.title');
+  
+  // 清除之前的隐藏定时器
+  if (hideProgressTimer) {
+    clearTimeout(hideProgressTimer);
+    hideProgressTimer = null;
+  }
+  
+  // 更新标题
+  const statusTitles = {
+    uploading: '☁️ ' + i18n('progressTitle'),
+    processing: '⚙️ Processing',
+    success: '✓ Published!',
+    error: '✗ Failed',
+  };
+  titleEl.textContent = statusTitles[status] || statusTitles.uploading;
+  
+  // 更新进度条
+  if (status === 'uploading') {
+    progressFill.style.width = '70%';
+  } else if (status === 'processing') {
+    progressFill.style.width = '85%';
+  } else if (status === 'success') {
+    progressFill.style.width = '100%';
+    spinner.classList.add('done');
+  } else if (status === 'error') {
+    progressFill.style.width = '100%';
+    progressFill.style.background = 'linear-gradient(90deg, #ef4444 0%, #f87171 100%)';
+  }
+  
+  // 更新之前的日志项状态
+  const existingItems = logsContainer.querySelectorAll('.log-item');
+  existingItems.forEach(item => {
+    item.classList.remove('current');
+    const icon = item.querySelector('.log-icon');
+    if (icon && icon.classList.contains('current')) {
+      icon.classList.remove('current');
+      icon.classList.add('success');
+      icon.textContent = '✓';
+    }
+  });
+  
+  // 添加新日志
+  const logItem = document.createElement('div');
+  logItem.className = 'log-item current';
+  
+  let iconClass = 'current';
+  let iconText = '●';
+  if (status === 'success') {
+    iconClass = 'success';
+    iconText = '✓';
+  } else if (status === 'error') {
+    iconClass = 'info';
+    iconText = '✗';
+  }
+  
+  logItem.innerHTML = `
+    <div class="log-icon ${iconClass}">${iconText}</div>
+    <div class="log-text">${message}</div>
+  `;
+  logsContainer.appendChild(logItem);
+  
+  // 如果有 URL，添加链接
+  if (url && status === 'success') {
+    const linkItem = document.createElement('div');
+    linkItem.className = 'log-item';
+    linkItem.innerHTML = `
+      <div class="log-icon success">🔗</div>
+      <div class="log-text"><a href="${url}" target="_blank" style="color: #4ade80; text-decoration: none;">Open Demo →</a></div>
+    `;
+    logsContainer.appendChild(linkItem);
+  }
+  
+  // 滚动到底部
+  logsContainer.scrollTop = logsContainer.scrollHeight;
+  
+  // 成功或失败后延迟关闭
+  if (status === 'success' || status === 'error') {
+    hideProgress(status === 'success' && url ? 5000 : 3000);
+  }
+}
 
 // 显示 Toast 通知
 function showToast(message, type = 'info') {
