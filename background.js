@@ -381,11 +381,17 @@ async function uploadToSihub(html, title, filename, tabId, frameId) {
       
       if (projectData.status === "ready") {
         // 处理完成 - 从 API URL 提取域名 + 固定路径 /project
-        const apiUrlObj = new URL(baseUrl);
-        const projectUrl = `${apiUrlObj.origin}/project/${projectId}`;
-        await showUploadProgress(tabId, frameId, "success", "Published!", projectUrl);
-        console.log("Project ready! URL:", projectUrl);
-        return;
+        try {
+          const apiUrlObj = new URL(baseUrl);
+          const projectUrl = `${apiUrlObj.origin}/project/${projectId}`;
+          await showUploadProgress(tabId, frameId, "success", "Published!", projectUrl);
+          console.log("Project ready! URL:", projectUrl);
+          return;
+        } catch (err) {
+          console.error("Failed to construct project URL:", err);
+          await showUploadProgress(tabId, frameId, "success", "Published! (URL unavailable)");
+          return;
+        }
       } else if (projectData.status === "failed") {
         throw new Error(`Project processing failed: ${projectData.error_msg || 'Unknown error'}`);
       }

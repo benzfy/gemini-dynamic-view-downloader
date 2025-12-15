@@ -471,6 +471,17 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
+// 安全地构造绝对 URL（处理无效 URL）
+function safeCreateAbsoluteUrl(url, baseUrl) {
+  try {
+    if (!url || !baseUrl) return null;
+    return new URL(url, baseUrl).href;
+  } catch (e) {
+    console.warn(`Invalid URL: ${url} (base: ${baseUrl})`, e);
+    return null;
+  }
+}
+
 // 收集页面中的资源 URL
 async function handleCollectAndDownload(isLocalFile) {
   try {
@@ -520,11 +531,14 @@ async function handleCollectAndDownload(isLocalFile) {
       }
     }
 
-    // 收集图片（排除 blob: 和 data:）
+    // 收集图片（排除 blob: 和 data: 以及 #id）
     for (const img of document.querySelectorAll("img[src]")) {
       const src = img.getAttribute("src");
-      if (src && !src.startsWith("data:") && !src.startsWith("blob:")) {
-        imageUrls.add(new URL(src, location.href).href);
+      if (src && !src.startsWith("data:") && !src.startsWith("blob:") && !src.startsWith("#")) {
+        const absoluteUrl = safeCreateAbsoluteUrl(src, location.href);
+        if (absoluteUrl) {
+          imageUrls.add(absoluteUrl);
+        }
       }
     }
 
@@ -535,8 +549,11 @@ async function handleCollectAndDownload(isLocalFile) {
         const parts = srcset.split(",");
         for (const part of parts) {
           const match = part.trim().match(/^(\S+)/);
-          if (match && !match[1].startsWith("data:")) {
-            imageUrls.add(new URL(match[1], location.href).href);
+          if (match && !match[1].startsWith("data:") && !match[1].startsWith("#")) {
+            const absoluteUrl = safeCreateAbsoluteUrl(match[1], location.href);
+            if (absoluteUrl) {
+              imageUrls.add(absoluteUrl);
+            }
           }
         }
       }
@@ -548,7 +565,10 @@ async function handleCollectAndDownload(isLocalFile) {
     )) {
       const href = favicon.getAttribute("href");
       if (href && !href.startsWith("data:")) {
-        imageUrls.add(new URL(href, location.href).href);
+        const absoluteUrl = safeCreateAbsoluteUrl(href, location.href);
+        if (absoluteUrl) {
+          imageUrls.add(absoluteUrl);
+        }
       }
     }
 
@@ -558,7 +578,10 @@ async function handleCollectAndDownload(isLocalFile) {
     )) {
       const href = link.getAttribute("href");
       if (href && !href.startsWith("data:")) {
-        cssUrls.add(new URL(href, location.href).href);
+        const absoluteUrl = safeCreateAbsoluteUrl(href, location.href);
+        if (absoluteUrl) {
+          cssUrls.add(absoluteUrl);
+        }
       }
     }
 
@@ -566,7 +589,10 @@ async function handleCollectAndDownload(isLocalFile) {
     for (const script of document.querySelectorAll("script[src]")) {
       const src = script.getAttribute("src");
       if (src && !src.startsWith("data:")) {
-        jsUrls.add(new URL(src, location.href).href);
+        const absoluteUrl = safeCreateAbsoluteUrl(src, location.href);
+        if (absoluteUrl) {
+          jsUrls.add(absoluteUrl);
+        }
       }
     }
 
@@ -576,8 +602,11 @@ async function handleCollectAndDownload(isLocalFile) {
       if (style) {
         const urlMatches = style.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g);
         for (const match of urlMatches) {
-          if (!match[1].startsWith("data:")) {
-            imageUrls.add(new URL(match[1], location.href).href);
+          if (!match[1].startsWith("data:") && !match[1].startsWith("#")) {
+            const absoluteUrl = safeCreateAbsoluteUrl(match[1], location.href);
+            if (absoluteUrl) {
+              imageUrls.add(absoluteUrl);
+            }
           }
         }
       }
@@ -591,8 +620,11 @@ async function handleCollectAndDownload(isLocalFile) {
           /url\(\s*["']?([^"')]+)["']?\s*\)/g
         );
         for (const match of urlMatches) {
-          if (!match[1].startsWith("data:")) {
-            imageUrls.add(new URL(match[1], location.href).href);
+          if (!match[1].startsWith("data:") && !match[1].startsWith("#")) {
+            const absoluteUrl = safeCreateAbsoluteUrl(match[1], location.href);
+            if (absoluteUrl) {
+              imageUrls.add(absoluteUrl);
+            }
           }
         }
       }
@@ -791,12 +823,10 @@ async function processCssUrls(cssContent, cssBaseUrl) {
   let match;
   while ((match = urlRegex.exec(cssContent)) !== null) {
     const url = match[1];
-    if (!url.startsWith("data:") && !urlMap.has(url)) {
-      try {
-        const absoluteUrl = new URL(url, cssBaseUrl).href;
+    if (!url.startsWith("data:") && !url.startsWith("#") && !urlMap.has(url)) {
+      const absoluteUrl = safeCreateAbsoluteUrl(url, cssBaseUrl);
+      if (absoluteUrl) {
         urlMap.set(url, absoluteUrl);
-      } catch {
-        // 忽略无效 URL
       }
     }
   }
@@ -860,8 +890,8 @@ async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap 
       const src = img.getAttribute("src");
       // 跳过已处理的（data: 开头）和 blob:
       if (src && !src.startsWith("data:") && !src.startsWith("blob:")) {
-        const absoluteUrl = new URL(src, location.href).href;
-        if (resourceMap[absoluteUrl]) {
+        const absoluteUrl = safeCreateAbsoluteUrl(src, location.href);
+        if (absoluteUrl && resourceMap[absoluteUrl]) {
           img.setAttribute("src", resourceMap[absoluteUrl]);
           // 标记为已下载，防止 inject 脚本再处理
           img.setAttribute("data-downloaded", "true");
@@ -886,8 +916,8 @@ async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap 
             const url = match[1];
             const rest = match[2];
             if (!url.startsWith("data:")) {
-              const absoluteUrl = new URL(url, location.href).href;
-              if (resourceMap[absoluteUrl]) {
+              const absoluteUrl = safeCreateAbsoluteUrl(url, location.href);
+              if (absoluteUrl && resourceMap[absoluteUrl]) {
                 newParts.push(resourceMap[absoluteUrl] + rest);
               } else {
                 newParts.push(trimmed);
@@ -907,8 +937,8 @@ async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap 
     )) {
       const href = favicon.getAttribute("href");
       if (href && !href.startsWith("data:")) {
-        const absoluteUrl = new URL(href, location.href).href;
-        if (resourceMap[absoluteUrl]) {
+        const absoluteUrl = safeCreateAbsoluteUrl(href, location.href);
+        if (absoluteUrl && resourceMap[absoluteUrl]) {
           favicon.setAttribute("href", resourceMap[absoluteUrl]);
         }
       }
@@ -920,8 +950,8 @@ async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap 
     )) {
       const href = link.getAttribute("href");
       if (href && !href.startsWith("data:")) {
-        const absoluteUrl = new URL(href, location.href).href;
-        if (cssMap[absoluteUrl]) {
+        const absoluteUrl = safeCreateAbsoluteUrl(href, location.href);
+        if (absoluteUrl && cssMap[absoluteUrl]) {
           const style = docClone.createElement("style");
           style.textContent = cssMap[absoluteUrl];
           const media = link.getAttribute("media");
@@ -937,8 +967,8 @@ async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap 
     for (const script of docClone.querySelectorAll("script[src]")) {
       const src = script.getAttribute("src");
       if (src && !src.startsWith("data:")) {
-        const absoluteUrl = new URL(src, location.href).href;
-        if (jsMap[absoluteUrl]) {
+        const absoluteUrl = safeCreateAbsoluteUrl(src, location.href);
+        if (absoluteUrl && jsMap[absoluteUrl]) {
           const newScript = docClone.createElement("script");
           newScript.textContent = jsMap[absoluteUrl];
           const type = script.getAttribute("type");
@@ -972,8 +1002,8 @@ async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap 
         const urlRegex = /url\(\s*["']?([^"')]+)["']?\s*\)/g;
         const newStyle = style.replace(urlRegex, (match, url) => {
           if (!url.startsWith("data:")) {
-            const absoluteUrl = new URL(url, location.href).href;
-            if (resourceMap[absoluteUrl]) {
+            const absoluteUrl = safeCreateAbsoluteUrl(url, location.href);
+            if (absoluteUrl && resourceMap[absoluteUrl]) {
               return `url("${resourceMap[absoluteUrl]}")`;
             }
           }
@@ -991,8 +1021,8 @@ async function handleGenerateHtml(resourceMap, cssMap, jsMap, genPromptToUrlMap 
           urlRegex,
           (match, url) => {
             if (!url.startsWith("data:")) {
-              const absoluteUrl = new URL(url, location.href).href;
-              if (resourceMap[absoluteUrl]) {
+              const absoluteUrl = safeCreateAbsoluteUrl(url, location.href);
+              if (absoluteUrl && resourceMap[absoluteUrl]) {
                 return `url("${resourceMap[absoluteUrl]}")`;
               }
             }
