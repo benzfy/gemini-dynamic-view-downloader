@@ -21,7 +21,7 @@
     "message": "Endpoint URL"
   },
   "optionsEndpointPlaceholder": {
-    "message": "https://sihub.xiaoluxue.com/api/v1/projects/upload"
+    "message": "https://limhub.xiaoluxue.com/api/v1/projects"
   },
   "optionsEndpointHint": {
     "message": "Leave empty to disable \"Save and Publish to Cloud\" feature"
@@ -32,9 +32,9 @@
   "optionsApiKeyPlaceholder": {
     "message": "lim_xxxxxx"
   },
-  "optionsApiKeyHint": {
-    "message": "Sent via X-API-Key header"
-  },
+    "optionsApiKeyHint": {
+      "message": "Sent via Authorization: Bearer header"
+    },
   "optionsSave": {
     "message": "Save Settings"
   },

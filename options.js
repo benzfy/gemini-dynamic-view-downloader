@@ -40,6 +40,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   if (result.sihubUrl) {
     document.getElementById('sihubUrl').value = result.sihubUrl;
+  } else {
+    // 默认值
+    document.getElementById('sihubUrl').value = "https://limhub.xiaoluxue.com/api/v1/projects/upload";
   }
   if (result.sihubApiKey) {
     document.getElementById('sihubApiKey').value = result.sihubApiKey;

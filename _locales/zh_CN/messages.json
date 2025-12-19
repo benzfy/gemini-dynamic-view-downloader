@@ -21,7 +21,7 @@
     "message": "端点 URL"
   },
   "optionsEndpointPlaceholder": {
-    "message": "https://sihub.xiaoluxue.com/api/v1/projects/upload"
+    "message": "https://limhub.xiaoluxue.com/api/v1/projects"
   },
   "optionsEndpointHint": {
     "message": "留空则禁用「保存并发布到云端」功能"
@@ -32,9 +32,9 @@
   "optionsApiKeyPlaceholder": {
     "message": "lim_xxxxxx"
   },
-  "optionsApiKeyHint": {
-    "message": "通过 X-API-Key 请求头发送"
-  },
+    "optionsApiKeyHint": {
+      "message": "通过 Authorization: Bearer 请求头发送"
+    },
   "optionsSave": {
     "message": "保存设置"
   },

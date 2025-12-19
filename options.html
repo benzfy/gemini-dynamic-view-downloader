@@ -81,15 +81,15 @@
   <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: #fff;" data-i18n="optionsCloudPublish">☁️ Cloud Publishing</h2>
   
   <div>
-    <label for="sihubUrl">API Base URL</label>
-    <input type="text" id="sihubUrl" placeholder="https://sihub.xiaoluxue.com/api/v1/projects">
-    <p class="hint">API endpoint (View URL will be: {domain}/project/{id})</p>
+    <label for="sihubUrl" data-i18n="optionsEndpointUrl">API Base URL</label>
+    <input type="text" id="sihubUrl" data-i18n-placeholder="optionsEndpointPlaceholder" placeholder="https://limhub.xiaoluxue.com/api/v1/projects">
+    <p class="hint" data-i18n="optionsEndpointHint">API endpoint (View URL will be: {domain}/project/{id})</p>
   </div>
   
   <div style="margin-top: 20px;">
-    <label for="sihubApiKey">API Key</label>
-    <input type="password" id="sihubApiKey" placeholder="lim_xxxxxx">
-    <p class="hint">Sent via Authorization: Bearer header</p>
+    <label for="sihubApiKey" data-i18n="optionsApiKey">API Key</label>
+    <input type="password" id="sihubApiKey" data-i18n-placeholder="optionsApiKeyPlaceholder" placeholder="lim_xxxxxx">
+    <p class="hint" data-i18n="optionsApiKeyHint">Sent via Authorization: Bearer header</p>
   </div>
 
   <button id="save" data-i18n="optionsSave">Save Settings</button>

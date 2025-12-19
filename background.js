@@ -1,6 +1,9 @@
 // 加载 JSZip 库（用于创建 zip 文件上传）
 importScripts('jszip.min.js');
 
+// 菜单创建锁，防止并发创建
+let isCreatingMenus = false;
+
 // 右键菜单 ID
 const MENU_SAVE_LOCAL = "save-local";
 const MENU_SAVE_AND_PUBLISH = "save-and-publish";
@@ -21,15 +24,17 @@ chrome.runtime.onStartup.addListener(() => {
 console.log("Service Worker started, creating menus");
 createContextMenus().catch((err) => console.error("Failed to create menus:", err));
 
+// 监听点击扩展图标，打开设置页面
+chrome.action.onClicked.addListener(() => {
+  chrome.runtime.openOptionsPage();
+});
+
 // 监听设置更新
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "settingsUpdated") {
     createContextMenus();
   }
 });
-
-// 菜单创建锁，防止并发创建
-let isCreatingMenus = false;
 
 // 创建或更新右键菜单
 async function createContextMenus() {
